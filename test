@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投資複利計算機</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type=range] { -webkit-appearance: none; background: #E5E7EB; border-radius: 999px; height: 8px; cursor: pointer; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #3B82F6; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        #principal::-webkit-slider-thumb { background: #10B981; }
+        #alpha::-webkit-slider-thumb { background: #F59E0B; }
+    </style>
+</head>
+<body class="bg-slate-50 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-[2rem] shadow-2xl p-8 max-w-5xl w-full flex flex-col md:flex-row gap-10 border border-slate-100">
+        <div class="flex-1 space-y-10">
+            <div>
+                <div class="flex justify-between items-center mb-3"><label class="text-slate-600 font-bold text-lg">目前年齡</label><span class="text-blue-600 font-bold text-2xl"><span id="age-val">35</span> 歲</span></div>
+                <input type="range" id="age" min="18" max="65" value="35" class="w-full">
+                <p class="text-right text-sm text-slate-400 mt-2 font-medium">距離退休還有 <span id="years-to-retire">30</span> 年</p>
+            </div>
+            <div>
+                <div class="flex justify-between items-center mb-3"><label class="text-slate-600 font-bold text-lg">目前閒置本金</label><span class="text-emerald-600 font-bold text-2xl" id="principal-val">25,000,000</span></div>
+                <input type="range" id="principal" min="0" max="50000000" step="100000" value="25000000" class="w-full">
+            </div>
+            <div>
+                <div class="flex justify-between items-center mb-3"><label class="text-slate-600 font-bold text-lg">每月持續投入</label><span class="text-sky-500 font-bold text-2xl" id="monthly-val">100,000</span></div>
+                <input type="range" id="monthly" min="0" max="500000" step="1000" value="100000" class="w-full">
+            </div>
+            <div>
+                <div class="flex justify-between items-center mb-3"><label class="text-slate-600 font-bold text-lg">主動投資比例 (Alpha)</label><span class="text-amber-500 font-bold text-2xl"><span id="alpha-val">40</span>%</span></div>
+                <input type="range" id="alpha" min="0" max="100" value="40" class="w-full">
+                <div class="flex justify-between text-xs text-slate-400 mt-2 font-semibold"><span>被動 <span id="beta-val">60</span>%</span><span>主動 <span id="alpha-label">40</span>%</span></div>
+            </div>
+        </div>
+        <div class="md:w-5/12 flex flex-col gap-6">
+            <div class="bg-blue-900 text-white rounded-[1.5rem] p-10 flex flex-col items-center justify-center text-center h-full relative overflow-hidden shadow-inner">
+                <div class="z-10 w-full">
+                    <p class="text-sm opacity-70 mb-2 font-medium">65歲 預估總資產</p>
+                    <h2 class="text-5xl font-black mb-6 tracking-tight">$<span id="total-assets">0</span></h2>
+                    <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold inline-block border border-white/20">預估平均年化報酬：<span id="avg-return">0</span>%</div>
+                </div>
+                <div class="grid grid-cols-2 gap-6 mt-12 w-full z-10 border-t border-white/10 pt-6 text-left">
+                    <div><p class="text-[10px] opacity-60 uppercase tracking-widest mb-1">本金複利貢獻</p><p class="text-emerald-400 font-bold text-lg" id="principal-contribution">$0</p></div>
+                    <div><p class="text-[10px] opacity-60 uppercase tracking-widest mb-1">月投複利貢獻</p><p class="text-sky-300 font-bold text-lg" id="monthly-contribution">$0</p></div>
+                </div>
+                <div class="absolute -right-8 -top-8 text-[12rem] font-bold opacity-5 pointer-events-none select-none">1</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const inputs = ['age', 'principal', 'monthly', 'alpha'];
+        const elements = {};
+        inputs.forEach(id => elements[id] = document.getElementById(id));
+        function calculate() {
+            const age = +elements.age.value, p = +elements.principal.value, m = +elements.monthly.value, aR = +elements.alpha.value / 100, bR = 1 - aR;
+            document.getElementById('age-val').innerText = age;
+            document.getElementById('years-to-retire').innerText = 65 - age;
+            document.getElementById('principal-val').innerText = p.toLocaleString();
+            document.getElementById('monthly-val').innerText = m.toLocaleString();
+            document.getElementById('alpha-val').innerText = Math.round(aR * 100);
+            document.getElementById('beta-val').innerText = Math.round(bR * 100);
+            document.getElementById('alpha-label').innerText = Math.round(aR * 100);
+            const avgReturn = (aR * 0.12) + (bR * 0.07);
+            document.getElementById('avg-return').innerText = (avgReturn * 100).toFixed(1);
+            const n = (65 - age) * 12, r = avgReturn / 12;
+            if (n <= 0) { document.getElementById('total-assets').innerText = p.toLocaleString(); return; }
+            const pC = p * Math.pow(1 + r, n), mC = m * ((Math.pow(1 + r, n) - 1) / r);
+            document.getElementById('total-assets').innerText = Math.round(pC + mC).toLocaleString();
+            document.getElementById('principal-contribution').innerText = '$' + Math.round(pC).toLocaleString();
+            document.getElementById('monthly-contribution').innerText = '$' + Math.round(mC).toLocaleString();
+        }
+        inputs.forEach(id => elements[id].addEventListener('input', calculate));
+        calculate();
+    </script>
+</body>
+</html>
